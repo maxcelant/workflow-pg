@@ -1,0 +1,44 @@
+name: Unit Test
+
+on:
+  push:
+    branches:
+      - [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install pipenv
+        run: |
+          pip install --upgrade pip
+          pip install pipenv
+        
+      - name: Cache pipenv dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.local/share/virtualenvs
+          key: ${{ runner.os }}-pipenv-${{ hashFiles('**/Pipfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pipenv-
+
+      - name: Install dependencies
+        run: |
+          if [ -d "${{ steps.cache.outputs.cache-hit }}" ] && [ "${{ steps.cache.outputs.cache-hit }}" == 'true' ]; then
+            echo "Cache hit, skipping dependency installation."
+          else
+            pipenv install --deploy --ignore-pipfile
+          fi
+
+      - name: Run tests
+        run: pipenv run pytest
+  
+          
